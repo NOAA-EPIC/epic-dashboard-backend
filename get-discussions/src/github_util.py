@@ -65,6 +65,21 @@ discussionsQuery = """
     }
     """
 
+# datatype = "issues" or "discussions"
+def format_data(data, organization, repository, dataType):
+    formatted_data = map(lambda x: {
+      'repository': repository, 
+      'index': x['number'],
+      'post_type': dataType,
+      'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
+      'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
+      'iso_date_time': x['createdAt'],
+      'complete_flag': 'No' 
+      }, data)
+    data = json.dumps(list(formatted_data))
+    return data
+
+
 def getGitHubIssues(organization, repository):
     variables = {'organization': organization, 'repository': repository}
     response = requests.post(githubGraphQLendpoint, json={'query': issuesQuery, 'variables': variables}, headers=graphQLHeaders)
@@ -72,18 +87,7 @@ def getGitHubIssues(organization, repository):
     print(data)
     repository_data = data.get('data', {}).get('repository')
 
-    open_issues = repository_data['issues']['nodes']
-
-    formatted_data = map(lambda x: {
-      'repository': repository, 
-      'index': x['number'],
-      'post_type': 'Issue',
-      'github_url': 'https://github.com/' + organization + '/' + repository + '/issues/' + str(x['number']) + '/',
-      'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
-      'iso_date_time': x['createdAt'],
-      'complete_flag': 'No' 
-      }, open_issues)
-    data = json.dumps(list(formatted_data))
+    data = format_data(repository_data['issues']['nodes'], organization, repository, "issues")
     return data
 
 
@@ -97,16 +101,6 @@ def getGitHubDiscussions(organization, repository):
                                        (issue["category"]["name"] == 'Q&A' or issue["category"]["name"] == 'Ideas'), 
         repository_data['discussions']['nodes'])
 
-    formatted_data = map(lambda x: {
-      'repository': repository, 
-      'index': x['number'],
-      'post_type': 'Discussion',
-      'github_url': 'https://github.com/' + organization + '/' + repository + '/discussions/' + str(x['number']) + '/',
-      'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
-      'iso_date_time': x['createdAt'],
-      'complete_flag': 'No' 
-      }, open_issues)
-
-    data = json.dumps(list(formatted_data)) 
+    data = format_data(open_issues, organization, repository, "discussions")
 
     return data
