@@ -24,13 +24,13 @@ issuesQuery = """
             title
             updatedAt
             comments(last: 1) {
-            totalCount
-            nodes {
-                createdAt
-            }
+                totalCount
+                nodes {
+                    createdAt
+                }
             }
             linkedBranches {
-            totalCount
+                totalCount
             }
         }
         }
@@ -49,6 +49,10 @@ discussionsQuery = """
             number
             title
             answerChosenAt
+            category {
+                name
+                isAnswerable
+            }
             comments(last: 1) {
                 totalCount
                 nodes {
@@ -89,7 +93,9 @@ def getGitHubDiscussions(organization, repository):
     data = response.json()
     repository_data = data.get('data', {}).get('repository')
 
-    open_issues = filter(lambda issue: issue["answerChosenAt"] == None, repository_data['discussions']['nodes'])
+    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and 
+                                       (issue["category"]["name"] == 'Q&A' or issue["category"]["name"] == 'Ideas'), 
+        repository_data['discussions']['nodes'])
 
     formatted_data = map(lambda x: {
       'repository': repository, 

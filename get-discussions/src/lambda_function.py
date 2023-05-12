@@ -5,10 +5,17 @@ import os
 from boto3.dynamodb.conditions import Key
 
 
-def write_data_to_s3(data, key):
-    # Initialize the S3 client
-    s3 = boto3.client('s3')
-    
+repositories = [
+    { 'organization': 'ufs-community', 'repository': 'ufs-srweather-app' },
+    { 'organization': 'ufs-community', 'repository': 'ufs-weather-model' },
+    { 'organization': 'ufs-community', 'repository': 'land-DA_workflow' },
+    { 'organization': 'NOAA-EPIC', 'repository': 'land-offline_workflow' },
+    { 'organization': 'NOAA-EMC', 'repository': 'UPP' }
+]
+
+def write_data_to_s3(s3, data, key):
+    print('Wrote data to file ' + key)
+
     # Write the JSON string to S3
     response = s3.put_object(
         Bucket=os.environ['EPIC_BUCKET'],
@@ -22,26 +29,15 @@ def write_data_to_s3(data, key):
 
 def lambda_handler(event, context):
     print(event)
-    dynamodb = boto3.resource('dynamodb')
-    db = dynamodb.Table(os.environ['DYNAMO_TABLE_NAME'])
-    all_ufs_community_discussions = db.query(KeyConditionExpression='repository=:repository',ExpressionAttributeValues={':repository':'ufs-community'})
-    
-    # Convert the JSON object to a string
-    my_data_str = json.dumps(all_ufs_community_discussions['Items'])
-    print(my_data_str)
-    response = write_data_to_s3(my_data_str, 'discussion-data.json')
-    
-    all_srw_discussions = github_util.getGitHubDiscussions('ufs-community', 'ufs-srweather-app')
-    response = write_data_to_s3(all_srw_discussions, 'discussion-srw-data.json')
-    
-    all_srw_issues = github_util.getGitHubIssues('ufs-community', 'ufs-srweather-app')
-    response = write_data_to_s3(all_srw_issues, 'issue-srw-data.json')
 
-    all_upp_discussions = github_util.getGitHubDiscussions('NOAA-EMC', 'UPP')
-    response = write_data_to_s3(all_upp_discussions, 'upp-data.json')
+    # Initialize the S3 client
+    s3 = boto3.client('s3')
 
-    all_upp_issues = github_util.getGitHubIssues('NOAA-EMC', 'UPP')
-    response = write_data_to_s3(all_upp_issues, 'upp-data.json')
+    for repo in repositories:
+        discussions = github_util.getGitHubDiscussions(repo['organization'], repo['repository'])
+        response = write_data_to_s3(s3, discussions, 'discussions-' + repo['organization'] + "-" + repo['repository'] + ".json")
+        issues = github_util.getGitHubIssues(repo['organization'], repo['repository'])
+        response = write_data_to_s3(s3, issues, 'issues-' + repo['organization'] + "-" + repo['repository'] + ".json")
     
     return {
         'statusCode': 200,
