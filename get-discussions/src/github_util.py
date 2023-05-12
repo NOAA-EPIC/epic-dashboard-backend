@@ -19,6 +19,9 @@ issuesQuery = """
         issues(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, states: [OPEN]) {
         totalCount
         nodes {
+            author {
+                login
+            }
             createdAt
             number
             title
@@ -28,9 +31,6 @@ issuesQuery = """
                 nodes {
                     createdAt
                 }
-            }
-            linkedBranches {
-                totalCount
             }
         }
         }
@@ -45,6 +45,9 @@ discussionsQuery = """
         discussions(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, states: [OPEN]) {
         totalCount
         nodes {
+            author {
+                login
+            }
             createdAt
             number
             title
@@ -67,6 +70,8 @@ discussionsQuery = """
 
 # datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
+    # print(data)
+
     formatted_data = map(lambda x: {
       'repository': repository, 
       'index': x['number'],
@@ -74,7 +79,9 @@ def format_data(data, organization, repository, dataType):
       'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
       'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
       'iso_date_time': x['createdAt'],
-      'complete_flag': 'No' 
+      'complete_flag': 'No',
+      'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
+      'author': x['author']['login']
       }, data)
     data = json.dumps(list(formatted_data))
     return data
