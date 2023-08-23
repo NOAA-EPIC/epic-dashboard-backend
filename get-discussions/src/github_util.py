@@ -29,6 +29,11 @@ issuesQuery = """
                     createdAt
                 }
             }
+            labels(first: 5) {
+                nodes {
+                    name
+                }
+            }
             linkedBranches {
                 totalCount
             }
@@ -59,6 +64,11 @@ discussionsQuery = """
                     createdAt
                 }
             }
+            labels(first: 5) {
+                nodes {
+                    name
+                }
+            }
         }
         }
     }
@@ -81,11 +91,11 @@ def getGitHubIssues(organization, repository):
       'github_url': 'https://github.com/' + organization + '/' + repository + '/issues/' + str(x['number']) + '/',
       'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
       'iso_date_time': x['createdAt'],
-      'complete_flag': 'No' 
+      'complete_flag': 'No',
+      'labels': [d['name'] for d in x['labels']['nodes']]
       }, open_issues)
     data = json.dumps(list(formatted_data))
     return data
-
 
 def getGitHubDiscussions(organization, repository):
     variables = {'organization': organization, 'repository': repository}
@@ -104,7 +114,8 @@ def getGitHubDiscussions(organization, repository):
       'github_url': 'https://github.com/' + organization + '/' + repository + '/discussions/' + str(x['number']) + '/',
       'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
       'iso_date_time': x['createdAt'],
-      'complete_flag': 'No' 
+      'complete_flag': 'No',
+      'labels': [d['name'] for d in x['labels']['nodes']]
       }, open_issues)
 
     data = json.dumps(list(formatted_data)) 
