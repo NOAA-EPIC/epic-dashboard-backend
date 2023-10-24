@@ -32,6 +32,11 @@ issuesQuery = """
                     createdAt
                 }
             }
+            labels(first: 5) {
+                nodes {
+                    name
+                }
+            }
         }
         }
     }
@@ -62,6 +67,11 @@ discussionsQuery = """
                     createdAt
                 }
             }
+            labels(first: 5) {
+                nodes {
+                    name
+                }
+            }
         }
         }
     }
@@ -81,7 +91,9 @@ def format_data(data, organization, repository, dataType):
       'iso_date_time': x['createdAt'],
       'complete_flag': 'No',
       'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
-      'author': x['author']['login']
+      'author': x['author']['login'],
+      'complete_flag': 'No',
+      'labels': [d['name'] for d in x['labels']['nodes']]
       }, data)
     data = json.dumps(list(formatted_data))
     return data
@@ -96,7 +108,6 @@ def getGitHubIssues(organization, repository):
 
     data = format_data(repository_data['issues']['nodes'], organization, repository, "issues")
     return data
-
 
 def getGitHubDiscussions(organization, repository):
     variables = {'organization': organization, 'repository': repository}
