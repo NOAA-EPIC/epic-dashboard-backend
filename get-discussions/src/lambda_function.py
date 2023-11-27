@@ -9,6 +9,7 @@ repositories = [
     { 'organization': 'ufs-community', 'repository': 'ufs-srweather-app' },
     { 'organization': 'ufs-community', 'repository': 'ufs-weather-model' },
     { 'organization': 'ufs-community', 'repository': 'land-DA_workflow' },
+    { 'organization': 'ufs-community', 'repository': 'HAFS'},
     { 'organization': 'NOAA-EPIC', 'repository': 'land-offline_workflow' },
     { 'organization': 'NOAA-EMC', 'repository': 'UPP' }
 ]
