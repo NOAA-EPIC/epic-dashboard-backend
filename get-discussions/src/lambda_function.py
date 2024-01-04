@@ -10,7 +10,9 @@ repositories = [
     { 'organization': 'ufs-community', 'repository': 'ufs-weather-model' },
     { 'organization': 'ufs-community', 'repository': 'land-DA_workflow' },
     { 'organization': 'NOAA-EPIC', 'repository': 'land-offline_workflow' },
-    { 'organization': 'NOAA-EMC', 'repository': 'UPP' }
+    { 'organization': 'NOAA-EMC', 'repository': 'UPP' },
+    { 'organization': 'hafs-community', 'repository': 'HAFS'}
+
 ]
 
 def write_data_to_s3(s3, data, key):

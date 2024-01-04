@@ -70,21 +70,26 @@ discussionsQuery = """
 
 # datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
-    # print(data)
+    # Only include HAFS posts since September 30, 2023 
+    filtered_data = [
+        x for x in data
+        if not (x['createdAt'] < '2023-09-30' and repository == "HAFS")
+    ]
 
     formatted_data = map(lambda x: {
-      'repository': repository, 
-      'index': x['number'],
-      'post_type': dataType,
-      'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
-      'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
-      'iso_date_time': x['createdAt'],
-      'complete_flag': 'No',
-      'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
-      'author': x['author']['login']
-      }, data)
-    data = json.dumps(list(formatted_data))
-    return data
+        'repository': repository, 
+        'title': x['title'],
+        'index': x['number'],
+        'post_type': dataType,
+        'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
+        'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
+        'iso_date_time': x['createdAt'],
+        'complete_flag': 'No',
+        'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
+        'author': x['author']['login']
+    }, filtered_data)
+
+    return json.dumps(list(formatted_data))
 
 
 def getGitHubIssues(organization, repository):
@@ -103,11 +108,8 @@ def getGitHubDiscussions(organization, repository):
     response = requests.post(githubGraphQLendpoint, json={'query': discussionsQuery, 'variables': variables}, headers=graphQLHeaders)
     data = response.json()
     repository_data = data.get('data', {}).get('repository')
-
-    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and 
-                                       (issue["category"]["name"] == 'Q&A' or issue["category"]["name"] == 'Ideas'), 
-        repository_data['discussions']['nodes'])
+    
+    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and issue["category"]["name"] != 'Announcements', repository_data['discussions']['nodes'])
 
     data = format_data(open_issues, organization, repository, "discussions")
-
     return data
