@@ -68,8 +68,9 @@ discussionsQuery = """
     }
     """
 
+# datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
-    
+    # Only include HAFS posts since September 30, 2023 
     filtered_data = [
         x for x in data
         if not (x['createdAt'] < '2023-09-30' and repository == "HAFS")
@@ -111,5 +112,4 @@ def getGitHubDiscussions(organization, repository):
     open_issues = filter(lambda issue: issue["answerChosenAt"] == None and issue["category"]["name"] != 'Announcements', repository_data['discussions']['nodes'])
 
     data = format_data(open_issues, organization, repository, "discussions")
-
     return data
