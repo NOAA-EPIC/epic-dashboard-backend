@@ -70,44 +70,43 @@ discussionsQuery = """
 
 # datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
-    # print(data)
 
     formatted_data = map(lambda x: {
-      'repository': repository, 
-      'index': x['number'],
-      'post_type': dataType,
-      'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
-      'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
-      'iso_date_time': x['createdAt'],
-      'complete_flag': 'No',
-      'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
-      'author': x['author']['login']
-      }, data)
-    data = json.dumps(list(formatted_data))
-    return data
+        'repository': repository, 
+        'title': x['title'],
+        'index': x['number'],
+        'post_type': dataType,
+        'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
+        'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
+        'iso_date_time': x['createdAt'],
+        'complete_flag': 'No',
+        'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
+        'author': x['author']['login']
+    }, data)
+
+    return json.dumps(list(formatted_data))
 
 
 def getGitHubIssues(organization, repository):
     variables = {'organization': organization, 'repository': repository}
     response = requests.post(githubGraphQLendpoint, json={'query': issuesQuery, 'variables': variables}, headers=graphQLHeaders)
     data = response.json()
-    print(data)
     repository_data = data.get('data', {}).get('repository')
 
     data = format_data(repository_data['issues']['nodes'], organization, repository, "issues")
     return data
 
 
-def getGitHubDiscussions(organization, repository):
+def getGitHubDiscussions(organization, repository, start_date):
     variables = {'organization': organization, 'repository': repository}
     response = requests.post(githubGraphQLendpoint, json={'query': discussionsQuery, 'variables': variables}, headers=graphQLHeaders)
     data = response.json()
     repository_data = data.get('data', {}).get('repository')
-
-    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and 
-                                       (issue["category"]["name"] == 'Q&A' or issue["category"]["name"] == 'Ideas'), 
-        repository_data['discussions']['nodes'])
-
+    
+    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and issue["category"]["name"] != 'Announcements', repository_data['discussions']['nodes'])
+  
+    if start_date:
+        open_issues = filter(lambda discussion: discussion["createdAt"] >= start_date, open_issues)
+    
     data = format_data(open_issues, organization, repository, "discussions")
-
     return data
