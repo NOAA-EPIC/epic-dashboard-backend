@@ -11,7 +11,7 @@ repositories = [
     { 'organization': 'ufs-community', 'repository': 'land-DA_workflow' },
     { 'organization': 'NOAA-EPIC', 'repository': 'land-offline_workflow' },
     { 'organization': 'NOAA-EMC', 'repository': 'UPP' },
-    { 'organization': 'hafs-community', 'repository': 'HAFS'}
+    { 'organization': 'hafs-community', 'repository': 'HAFS', 'startDate': '2023-09-30T00:00:00Z'}
 
 ]
 
@@ -36,7 +36,7 @@ def lambda_handler(event, context):
     s3 = boto3.client('s3')
 
     for repo in repositories:
-        discussions = github_util.getGitHubDiscussions(repo['organization'], repo['repository'])
+        discussions = github_util.getGitHubDiscussions(repo['organization'], repo['repository'], repo.get('startDate'))
         response = write_data_to_s3(s3, discussions, 'discussions-' + repo['organization'] + "-" + repo['repository'] + ".json")
         issues = github_util.getGitHubIssues(repo['organization'], repo['repository'])
         response = write_data_to_s3(s3, issues, 'issues-' + repo['organization'] + "-" + repo['repository'] + ".json")
