@@ -56,10 +56,18 @@ discussionsQuery = """
                 name
                 isAnswerable
             }
+             labels(first: 10) { 
+                nodes {
+                    name
+                }
+            }
             comments(last: 1) {
                 totalCount
                 nodes {
                     createdAt
+                    author {
+                        login
+                    }
                 }
             }
         }
@@ -70,21 +78,28 @@ discussionsQuery = """
 
 # datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
+    formatted_data = []
+    for x in data:
+        discussion_data = {
+            'repository': repository, 
+            'title': x['title'],
+            'index': x['number'],
+            'post_type': dataType,
+            'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
+            'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
+            'iso_date_time': x['createdAt'],
+            'complete_flag': 'No',
+            'author': x['author']['login'],
+        }
+        if x['comments']['totalCount'] > 0:
+            last_comment = x['comments']['nodes'][0]
+            discussion_data['last_comment_date_time'] = last_comment['createdAt']
+            if dataType == 'discussions'and 'author' in last_comment:
+                discussion_data['last_commenter'] = last_comment['author']['login']
+        formatted_data.append(discussion_data)
 
-    formatted_data = map(lambda x: {
-        'repository': repository, 
-        'title': x['title'],
-        'index': x['number'],
-        'post_type': dataType,
-        'github_url': 'https://github.com/' + organization + '/' + repository + '/' + dataType + '/' + str(x['number']) + '/',
-        'initial_answer': 'Yes' if x['comments']['totalCount'] > 0 else 'No',
-        'iso_date_time': x['createdAt'],
-        'complete_flag': 'No',
-        'last_comment_date_time': x['comments']['nodes'][0]['createdAt'] if x['comments']['totalCount'] > 0 else '',
-        'author': x['author']['login']
-    }, data)
+    return json.dumps(formatted_data)
 
-    return json.dumps(list(formatted_data))
 
 
 def getGitHubIssues(organization, repository):
@@ -102,8 +117,10 @@ def getGitHubDiscussions(organization, repository, start_date):
     response = requests.post(githubGraphQLendpoint, json={'query': discussionsQuery, 'variables': variables}, headers=graphQLHeaders)
     data = response.json()
     repository_data = data.get('data', {}).get('repository')
-    
-    open_issues = filter(lambda issue: issue["answerChosenAt"] == None and issue["category"]["name"] != 'Announcements', repository_data['discussions']['nodes'])
+    open_issues = filter(lambda issue: issue["answerChosenAt"] == None 
+                                       and issue["category"]["name"] != 'Announcements' 
+                                       and ("labels" not in issue or not isinstance(issue["labels"]["nodes"], list) or "RCM Discussion" not in [label.get("name", "") for label in issue["labels"]["nodes"]]),
+                         repository_data['discussions']['nodes'])
   
     if start_date:
         open_issues = filter(lambda discussion: discussion["createdAt"] >= start_date, open_issues)
