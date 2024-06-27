@@ -85,7 +85,7 @@ discussionsQuery = """
     }
     """
 
-# Function to format data
+# datatype = "issues" or "discussions"
 def format_data(data, organization, repository, dataType):
     formatted_data = []
     for x in data:
@@ -114,7 +114,6 @@ def format_data(data, organization, repository, dataType):
         formatted_data.append(discussion_data)
     return json.dumps(formatted_data)
 
-# Function to get GitHub issues
 def getGitHubIssues(organization, repository):
     variables = {'organization': organization, 'repository': repository}
     response = requests.post(githubGraphQLendpoint, json={'query': issuesQuery, 'variables': variables}, headers=graphQLHeaders)
