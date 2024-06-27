@@ -11,7 +11,7 @@ graphQLHeaders = {
     'Authorization': f'Bearer {token}'
 }
 
-# Define the GraphQL query
+# Define the GraphQL queries
 issuesQuery = """
     query ($organization: String!, $repository: String!) {
     repository(owner: $organization, name: $repository) {
@@ -68,6 +68,15 @@ discussionsQuery = """
                     author {
                         login
                     }
+                    replies(last: 1) {
+                        totalCount
+                        nodes {
+                            createdAt
+                            author {
+                                login
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -94,13 +103,16 @@ def format_data(data, organization, repository, dataType):
         if x['comments']['totalCount'] > 0:
             last_comment = x['comments']['nodes'][0]
             discussion_data['last_comment_date_time'] = last_comment['createdAt']
-            if dataType == 'discussions'and 'author' in last_comment:
+            if dataType == 'discussions' and 'author' in last_comment:
                 discussion_data['last_commenter'] = last_comment['author']['login']
+            if 'replies' in last_comment.keys() and last_comment['replies']['totalCount'] > 0:
+                last_reply = last_comment['replies']['nodes'][0]
+                if discussion_data['last_comment_date_time'] < last_reply['createdAt']:
+                    discussion_data['last_comment_date_time'] = last_reply['createdAt']
+                    discussion_data['last_commenter'] = last_reply['author']['login']
+                
         formatted_data.append(discussion_data)
-
     return json.dumps(formatted_data)
-
-
 
 def getGitHubIssues(organization, repository):
     variables = {'organization': organization, 'repository': repository}
@@ -110,7 +122,6 @@ def getGitHubIssues(organization, repository):
 
     data = format_data(repository_data['issues']['nodes'], organization, repository, "issues")
     return data
-
 
 def getGitHubDiscussions(organization, repository, start_date):
     variables = {'organization': organization, 'repository': repository}
@@ -124,6 +135,5 @@ def getGitHubDiscussions(organization, repository, start_date):
   
     if start_date:
         open_issues = filter(lambda discussion: discussion["createdAt"] >= start_date, open_issues)
-    
     data = format_data(open_issues, organization, repository, "discussions")
     return data

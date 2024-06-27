@@ -40,7 +40,6 @@ def lambda_handler(event, context):
         response = write_data_to_s3(s3, discussions, 'discussions-' + repo['organization'] + "-" + repo['repository'] + ".json")
         issues = github_util.getGitHubIssues(repo['organization'], repo['repository'])
         response = write_data_to_s3(s3, issues, 'issues-' + repo['organization'] + "-" + repo['repository'] + ".json")
-    
     return {
         'statusCode': 200,
         "isBase64Encoded": 'false',
